@@ -37,7 +37,6 @@ import software.amazon.awscdk.services.rds.MysqlEngineVersion;
 
 import software.constructs.Construct;
 
-
 public class CdktestStack extends Stack {
 	public CdktestStack(final Construct parent, final String id) {
 		this(parent, id, null);
@@ -52,7 +51,6 @@ public class CdktestStack extends Stack {
 //
 //		topic.addSubscription(new SqsSubscription(queue));
 
-		
 		createECSCluster();
 
 	}
@@ -62,67 +60,47 @@ public class CdktestStack extends Stack {
 				.build();
 
 		Cluster cluster = Cluster.Builder.create(this, "MyCluster").vpc(vpc).build();
-		
-		
-		
-	
+
 		@NotNull
 		Credentials credentials = Credentials.fromGeneratedSecret("testUser");
-		
-		
-		
-		DatabaseInstance instance = DatabaseInstance.Builder.create(this, "testDB")
-				.databaseName("testDB")
-				.vpc(vpc)
-				.engine(DatabaseInstanceEngine.mysql(MySqlInstanceEngineProps.builder().version(MysqlEngineVersion.VER_5_7).build()))
-				.credentials(credentials)
-				.instanceType(InstanceType.of(InstanceClass.BURSTABLE2, InstanceSize.MICRO))
+
+		DatabaseInstance instance = DatabaseInstance.Builder.create(this, "testDB").databaseName("testDB").vpc(vpc)
+				.engine(DatabaseInstanceEngine
+						.mysql(MySqlInstanceEngineProps.builder().version(MysqlEngineVersion.VER_5_7).build()))
+				.credentials(credentials).instanceType(InstanceType.of(InstanceClass.BURSTABLE2, InstanceSize.MICRO))
 				.build();
-		
-		
-		
-		
-		
+
 		@NotNull
 		String dbInstanceEndpointAddress = instance.getDbInstanceEndpointAddress();
 		
+		String url="jdbc:mysql://"+dbInstanceEndpointAddress+":3306";
+
 		@NotNull
 		Secret username = Secret.fromSecretsManager(instance.getSecret(), "username");
-		String userNameStr = username.toString();
-		
-	
+
 		@NotNull
 		Secret password = Secret.fromSecretsManager(instance.getSecret(), "password");
-		String passwordStr = password.toString();
-		
-		
 
 		Map<String, String> envMap = new HashMap<String, String>();
-		envMap.put("endpoint", dbInstanceEndpointAddress);
-		envMap.put("username", userNameStr);
-		envMap.put("password", passwordStr);
-	
-		
+		envMap.put("spring.datasource.url", url);
+
 		Map<String, Secret> secretMap = new HashMap<String, Secret>();
-		secretMap.put("DBUSER" , username);
-		secretMap.put("DBPWD", password);
-		
-		
+		secretMap.put("spring.datasource.username", username);
+		secretMap.put("spring.datasource.password", password);
+
 		// Create a load-balanced Fargate service and make it public
-		ApplicationLoadBalancedFargateService build = ApplicationLoadBalancedFargateService.Builder.create(this, "MyFargateService").cluster(cluster) // Required
+		ApplicationLoadBalancedFargateService build = ApplicationLoadBalancedFargateService.Builder
+				.create(this, "MyFargateService").cluster(cluster) // Required
 				.cpu(512) // Default is 256
 				.desiredCount(6) // Default is 1
 				.taskImageOptions(ApplicationLoadBalancedTaskImageOptions.builder()
-						.image(ContainerImage.fromRegistry("amazon/amazon-ecs-sample"))
-						.secrets(secretMap )
-						.environment(envMap).build()
-						)
+						.image(ContainerImage.fromRegistry("amazon/amazon-ecs-sample")).secrets(secretMap)
+						.environment(envMap).build())
 				.memoryLimitMiB(2048) // Default is 512
 				.publicLoadBalancer(true) // Default is false
 				.build();
-		
+
 		build.getService().getConnections().allowTo(instance, Port.tcp(3306), "Connect to DB");
-		
-		
+
 	}
 }
