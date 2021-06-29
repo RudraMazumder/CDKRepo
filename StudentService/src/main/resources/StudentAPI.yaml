@@ -1,0 +1,193 @@
+openapi: 3.0.0
+info:
+  title: Student API
+  description: Student Demo API
+  version: 1.0.0
+servers:
+  - url: http://devapi.com
+  - url: http://prodapi.com
+paths:
+  /student:
+    description: Student resources
+    get:
+      description: Fetch Student resource
+      parameters:
+        - in : query
+          name: studentname
+          schema:
+            type: string
+            example: Rudra
+      responses:
+        200:
+          description: Success Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/student'
+    post:
+      description: Add new student
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              $ref: '#/components/schemas/student'
+      responses:
+        201:
+            description: Record Successfully Added
+  /student/{id}:
+    description: get student by id
+    get:
+      parameters:
+        - in : path
+          name: id
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: Success Response for each identifier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/student'
+    delete:
+      parameters:
+        - name : id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: deleted student
+  /student/{studentId}/courses:
+    description: get courses for a student
+    get:
+      parameters:
+        - in : path
+          name: studentId
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: Success Response for each identifier
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/course'
+    post:
+      description: Add new course
+      parameters:
+        - in : path
+          name: studentId
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/course'
+      responses:
+        201:
+            description: Record Successfully Added       
+  
+  /courses:
+    description: Course resources
+    get:
+      description: Fetch Course resource
+      parameters:
+        - in : query
+          name: coursename
+          schema:
+            type: string
+            example: Maths
+      responses:
+        200:
+          description: Success Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/course'
+    post:
+      description: Add new course
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              $ref: '#/components/schemas/course'
+      responses:
+        201:
+            description: Record Successfully Added
+  /courses/{id}:
+    description: get course by id
+    get:
+      parameters:
+        - in : path
+          name: id
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: Success Response for each identifier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/course'
+    delete:
+      parameters:
+        - name : id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: deleted course
+    
+components:
+  schemas:
+    student:
+      type: object
+      properties:
+          StudentID:
+            type: integer
+            example: 3
+          StudentName:
+            type: string
+            example: David
+          Age:
+            type: integer
+            example: 10
+          GroupID:
+            type: string
+            example: GROUP-3  
+     
+    course:
+      type: object
+      properties:
+          CourseUID:
+            type: integer
+            example: 3
+          CourseName:
+            type: string
+            example: Mathematics
+          CourseFee:
+            type: integer
+            example: 110

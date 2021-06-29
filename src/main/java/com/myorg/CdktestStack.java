@@ -22,6 +22,7 @@ import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Subnet;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ecr.assets.DockerImageAsset;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerImage;
 import software.amazon.awscdk.services.ecs.ICluster;
@@ -63,8 +64,9 @@ public class CdktestStack extends Stack {
 
 		@NotNull
 		Credentials credentials = Credentials.fromGeneratedSecret("testUser");
+		String dbName="testDB";
 
-		DatabaseInstance instance = DatabaseInstance.Builder.create(this, "testDB").databaseName("testDB").vpc(vpc)
+		DatabaseInstance instance = DatabaseInstance.Builder.create(this, dbName).databaseName(dbName).vpc(vpc)
 				.engine(DatabaseInstanceEngine
 						.mysql(MySqlInstanceEngineProps.builder().version(MysqlEngineVersion.VER_5_7).build()))
 				.credentials(credentials).instanceType(InstanceType.of(InstanceClass.BURSTABLE2, InstanceSize.MICRO))
@@ -73,7 +75,8 @@ public class CdktestStack extends Stack {
 		@NotNull
 		String dbInstanceEndpointAddress = instance.getDbInstanceEndpointAddress();
 		
-		String url="jdbc:mysql://"+dbInstanceEndpointAddress+":3306";
+		
+		String url="jdbc:mysql://"+dbInstanceEndpointAddress+":3306/"+dbName;
 
 		@NotNull
 		Secret username = Secret.fromSecretsManager(instance.getSecret(), "username");
@@ -94,7 +97,9 @@ public class CdktestStack extends Stack {
 				.cpu(512) // Default is 256
 				.desiredCount(6) // Default is 1
 				.taskImageOptions(ApplicationLoadBalancedTaskImageOptions.builder()
-						.image(ContainerImage.fromRegistry("amazon/amazon-ecs-sample")).secrets(secretMap)
+						.image(ContainerImage.fromDockerImageAsset(DockerImageAsset.Builder.create(this, "SpringbootApp")
+								.directory("./StudentService").build())).secrets(secretMap)
+						.containerPort(8080)
 						.environment(envMap).build())
 				.memoryLimitMiB(2048) // Default is 512
 				.publicLoadBalancer(true) // Default is false
